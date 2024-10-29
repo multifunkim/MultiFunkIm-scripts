@@ -25,5 +25,9 @@ legend({'name1','name2',},'Location','northeastoutside','Orientation','vertical'
 [H,P,CI,STATS] = ttest2(y1,y2);
 if H==0
     STR = ['Not significant : p =' num2str(P)];
-    annotation('textarrow',[0.4,0.4],[0.88,0.8],'String', STR,'TextColor','k','Fontsize', 16,'Color','w','LineStyle','-','FontWeight','bold');
+    annotation('textarrow',[0.4,0.4],[0.88,0.89],'String', STR,'TextColor','k','Fontsize', 16,'Color','w','LineStyle','-','FontWeight','bold');
 end
+% Save ------------------------------------------------------------------
+figurepath = cd;
+figurename = strcat(mfilename, '.svg');
+saveas(ch,fullfile(figurepath,figurename));
