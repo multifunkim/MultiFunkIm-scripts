@@ -76,30 +76,5 @@ co = [  0         0.4470    0.7410;     % Bleu
 set(groot,'DefaultAxesColorOrder',co); % cf  https://www.mathworks.com/help/matlab/graphics_transition/why-are-plot-lines-different-colors.html
 
 
-%% EXEMPLE
-%==========================================================================
 
-ch = figure('Name','Title of the figure','Color','white'); 
-
-% Plot --------------------------------------------------------------------
-subplot(2,2,[1,2])
-x = linspace(-2*pi,2*pi);
-y1 = sin(x);
-y2 = cos(x);
-plot(x,y1,x,y2); 
-% X axis ------------------------------------------------------------------
-xlabel({'Xlabek','Xunit'}); 
-xlim([min(x) max(x)]); 
-% X axis ------------------------------------------------------------------
-ylabel({'Ylabel','Yunit'}); 
-ylim([-1.5 1.5]);
-% Legend ------------------------------------------------------------------
-title(sprintf('PART %d',1)); 
-legend({'name1','name2',},'Location','northeastoutside','Orientation','vertical');
-% Statistics ------------------------------------------------------------------
-[H,P,CI,STATS] = ttest2(y1,y2);
-if H==0
-    STR = ['Not significant : p =' num2str(P)];
-    annotation('textarrow',[0.4,0.4],[0.88,0.8],'String', STR,'TextColor','k','Fontsize', 16,'Color','w','LineStyle','-','FontWeight','bold');
-end
 
