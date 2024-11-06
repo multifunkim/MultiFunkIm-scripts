@@ -4,7 +4,7 @@
   "Category": "Other",
   "URLzip": "https://github.com/multifunkim/MultiFunkIm-scripts/archive/refs/heads/main.zip",
   "URLinfo": "https://github.com/multifunkim/MultiFunkIm-scripts",
-  "TestFile": "README.md",
+  "TestFile": "getMultiFunkImVersion",
   "LoadFolders": [
     "*"
   ],
