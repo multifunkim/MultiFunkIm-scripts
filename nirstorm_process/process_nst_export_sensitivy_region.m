@@ -76,7 +76,7 @@ function OutputFiles = Run(sProcess, sInputs) %#ok<DEFNU>
     iRois  = cellfun(@(x)find(strcmp( {sCortex.Atlas(iAtlas).Scouts.Label},x)),   ROI{2});
     
     % Threshold : remove all sensitivity lower than -5db
-    threshold_value = -5; % in db
+    threshold_value = -2; % in db
 
     varTypes = ["string", "double", repmat("double", 1 , length(iRois))];
     varNames = [{'Channel', 'Wavelength'}, {sCortex.Atlas(iAtlas).Scouts.Label}];
