@@ -12,8 +12,8 @@ function sProcess = GetDescription() %#ok<DEFNU>
     sProcess.Comment     = 'Export nirs sensitivity to tsv';
     sProcess.FileTag     = '';
     sProcess.Category    = 'File';
-    sProcess.SubGroup    = {'NIRS', 'Sources'};
-    sProcess.Index       = 1406;
+    sProcess.SubGroup    = {'Multifunkim', 'fNIRS'};
+    sProcess.Index       = 7001;
     sProcess.Description = '';
     % Definition of the input accepted by this process
     sProcess.InputTypes  = {'data', 'raw'};
