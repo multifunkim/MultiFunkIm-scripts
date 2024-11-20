@@ -64,47 +64,46 @@ function OutputFiles = Run(sProcess, sInputs) %#ok<DEFNU>
     sStudy = bst_get('Study', sInputs.iStudy);
     
     sForward    = in_bst_headmodel(sStudy.HeadModel(sStudy.iHeadModel).FileName);
-    ChannelMat = in_bst_channel(sInputs(1).ChannelFile);
-    sCortex = in_tess_bst(sForward.SurfaceFile);
+    sCortex     = in_tess_bst(sForward.SurfaceFile);
     
-    nChannel = size(sForward.Gain,1);
-    nWavelentgh = size(sForward.Gain,2);
+    nChannel    = size(sForward.Gain,1);
     
     % ROI selection
-    ROI  =  sProcess.options.scouts.Value;
-    iAtlas = find(strcmp( {sCortex.Atlas.Name},ROI{1}));
-    iRois  = cellfun(@(x)find(strcmp( {sCortex.Atlas(iAtlas).Scouts.Label},x)),   ROI{2});
+    ROI     = sProcess.options.scouts.Value;
+    iAtlas  = find(strcmp( {sCortex.Atlas.Name},ROI{1}));
+    iRois   = cellfun(@(x)find(strcmp( {sCortex.Atlas(iAtlas).Scouts.Label},x)),   ROI{2});
     
     % Threshold : remove all sensitivity lower than -5db
     threshold_value = -2; % in db
 
-    varTypes = ["string", "double", repmat("double", 1 , length(iRois))];
-    varNames = [{'Channel', 'Wavelength'}, {sCortex.Atlas(iAtlas).Scouts.Label}];
-    sz = [nChannel*nWavelentgh, length(varNames)];
+    varTypes = ["string",  repmat("double", 1 , length(iRois))];
+    varNames = [{'Channel'}, {sCortex.Atlas(iAtlas).Scouts.Label}];
+    sz = [nChannel, length(varNames)];
     
     T = table('Size',sz,'VariableTypes',varTypes,'VariableNames',varNames);
 
+    % Average the gain of the two wavelength 
+    gain_matrix = squeeze(mean(sForward.Gain, 2));
+    max_gain    = max(max(gain_matrix));
+
     iRow = 1;
-    for iwl=1:nWavelentgh
-    
-        for iPair = 1:nChannel
-            gain = squeeze(sForward.Gain(iPair,iwl,:)); 
-            gain(gain <  10^(threshold_value)*max(max(sForward.Gain(:,iwl,:)))) = 0;
-    
-    
-            for iCluster = 1:length(iRois)
-                sROI = sCortex.Atlas(iAtlas).Scouts(iRois(iCluster));
-                vertex = sROI.Vertices;
-    
-                T{iRow, sROI.Label} = sum(gain(vertex));
-            end
-    
-            T{iRow,'Channel'} = sForward.pair_names(iPair);
-            T{iRow,'Wavelength'} = ChannelMat.Nirs.Wavelengths(iwl);
-    
-            iRow = iRow + 1;
+    for iPair = 1:nChannel
+
+        gain_channel = squeeze(gain_matrix(iPair,:)); 
+        gain_channel(gain_channel <  10^(threshold_value)*max_gain) = 0;
+
+
+        for iCluster = 1:length(iRois)
+            sROI = sCortex.Atlas(iAtlas).Scouts(iRois(iCluster));
+            vertex = sROI.Vertices;
+
+            T{iRow, sROI.Label} = sum(gain_channel(vertex));
         end
+
+        T{iRow,'Channel'} = sForward.pair_names(iPair);
+        iRow = iRow + 1;
     end
+    
     
     fileName = sProcess.options.outputdir.Value{1};
     writetable(T,fileName, 'FileType','text');
