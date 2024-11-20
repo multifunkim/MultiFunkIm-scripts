@@ -70,14 +70,56 @@ end
 function OutputFiles = Run(sProcess, sInputs) %#ok<DEFNU>
 
     OutputFiles = {};
+        
+    weight_matrix = readtable(sProcess.options.weight_file.Value{1},'FileType','text');
     
-    % Save the new head model
-    sStudy = bst_get('Study', sInputs.iStudy);
+    sData     = in_bst_data(sInputs.FileName);
+    sChannels = in_bst_channel(sInputs.ChannelFile);
+
+
+    [sDataNIRS, sChannels_data] = process_nst_mbll('filter_bad_channels',sData.F', sChannels, sData.ChannelFlag);
+
+    hb_type = {'HbO', 'HbR', 'HbT'};
+
+
+    varTypes = [ repmat("double", 1 , size(weight_matrix,2))];
+    varNames = [{'Time'}, weight_matrix.Properties.VariableNames(2:end)];
+    sz = [size(sDataNIRS,1), length(varNames)];
     
-    
-    
+    T_Hbo = table('Size',sz,'VariableTypes',varTypes,'VariableNames',varNames);
+    T_Hbo.Time = sData.Time';
+
+    T_HbR = table('Size',sz,'VariableTypes',varTypes,'VariableNames',varNames);
+    T_HbR.Time = sData.Time';
+
+    T_HbT = table('Size',sz,'VariableTypes',varTypes,'VariableNames',varNames);
+    T_HbT.Time = sData.Time';
+
+    for iRegion = 2:size(weight_matrix,2)
+        region_weight = weight_matrix{:, iRegion};
+        channels_name = weight_matrix{region_weight > 0 , 1};
+        
+        if isempty(channels_name)
+            % No channel for this region, skip
+            continue;
+        end
+
+        weight_channels = region_weight (region_weight > 0) ./ sum(region_weight);
+
+        idx_chann = channel_find( sChannels_data.Channel, cellfun(@(x)[ x hb_type{1}], channels_name , 'UniformOutput', false));
+        T_Hbo{:,iRegion} = mean( weight_channels' .* sDataNIRS(:,idx_chann),2);
+
+        idx_chann = channel_find( sChannels_data.Channel, cellfun(@(x)[ x hb_type{2}], channels_name , 'UniformOutput', false));
+        T_HbR{:,iRegion} = mean( weight_channels' .* sDataNIRS(:,idx_chann),2);
+
+        idx_chann = channel_find( sChannels_data.Channel, cellfun(@(x)[ x hb_type{3}], channels_name , 'UniformOutput', false));
+        T_HbT{:,iRegion} = mean( weight_channels' .* sDataNIRS(:,idx_chann),2);
+    end
     
     
     fileName = sProcess.options.outputdir.Value{1};
-    writetable(T,fileName, 'FileType','text');
+    writetable(T_Hbo, strrep(fileName, '.tsv','_HbO.tsv'), 'FileType','text');
+    writetable(T_HbR, strrep(fileName, '.tsv','_HbR.tsv'), 'FileType','text');
+    writetable(T_HbT, strrep(fileName, '.tsv','_HbT.tsv'), 'FileType','text');
+
 end
