@@ -39,7 +39,7 @@ function sProcess = GetDescription() %#ok<DEFNU>
         'ExportData', ...                  % LastUsedDir: {ImportData,ImportChannel,ImportAnat,ExportChannel,ExportData,ExportAnat,ExportProtocol,ExportImage,ExportScript}
         'single', ...                      % Selection mode: {single,multiple}
         'files', ...                        % Selection mode: {files,dirs,files_and_dirs}
-        {{'.folder'}, '*.tsv*'}, ... % Available file formats
+        {{'.tsv'}, '*.tsv'}, ... % Available file formats
         'MriOut'};                         % DefaultFormats: {ChannelIn,DataIn,DipolesIn,EventsIn,AnatIn,MriIn,NoiseCovIn,ResultsIn,SspIn,SurfaceIn,TimefreqIn}
     % Option definition
     % TODO: add flag to enable ouput
