@@ -89,7 +89,7 @@ function [VOI_file,output_vol] = SEEG_to_mask(subject_name, channel_file, contac
 
     % Save new MRI in Brainstorm format
     out_mri_nii(output_vol, output_file);
-    import_mri(iSubject, output_file,  'ALL-ATLAS', 0, 0, output_name, output_vol.Labels);
+    import_mri(iSubject, output_file,  'ALL-ATLAS', 0, 0, file_unique(output_name, {sSubject.Anatomy.Comment}), output_vol.Labels);
     
     disp('BST> Done');
 

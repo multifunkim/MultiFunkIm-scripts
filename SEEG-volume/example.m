@@ -1,9 +1,9 @@
 
 % Input definition
 subject_name = 'PA65-P';
-channel_file = '/Volumes/CrucialX8/data/MEG_SEEG_CA_PA65-P/data/PA65-P/PA65S2/channel.mat';
-contact_name = {'RH4', 'RH5', 'RH8', 'ROF7','ROF10'};
-radius       = 10;
+channel_file = 'PA65-P/PA65S2/channel.mat';
+contact_name = {'RH4', 'RH5', 'RH8'};
+radius       = 3;
 
 % Output definition
 output_name = 'SEEG_VOI';
