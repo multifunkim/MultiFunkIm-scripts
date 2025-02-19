@@ -7,19 +7,20 @@ function [VOI_file,output_vol] = SEEG_to_mask(subject_name, channel_file, contac
 
     sChannel = in_bst_channel(channel_file);
     
-    [iChannels, Comment]  = channel_find(sChannel.Channel, contact_name);
-    if length(iChannels) < length(contact_name)
-        warning('Some contacts were not find in the channels fille. \nContact found: %s', Comment)
+    % Load SEEG contacts
+    unique_contacts = unique({contact_name{:}});
+    [iChannels, ~]  = channel_find(sChannel.Channel, unique_contacts);
+    if length(iChannels) < length(unique_contacts)
+        not_found = setdiff(unique_contacts,{sChannel.Channel(iChannels).Name});
+        error('Some contacts were not find in the channels fille. \nContact not found: %s', strjoin(not_found,', '))
     end
-    
     contacts        = sChannel.Channel(iChannels);
-    contacts_loc    = [contacts.Loc]';
 
 
+    % Load subject MRI
     [sSubject, iSubject] = bst_get('Subject', subject_name);
     sMri = in_mri_bst(sSubject.Anatomy(sSubject.iAnatomy).FileName);
-    
-    contacts_loc_mri = cs_convert(sMri, 'scs', 'voxel', contacts_loc);
+
 
     % Compute sphere
     if all(radius > sMri.Voxsize)
@@ -37,11 +38,23 @@ function [VOI_file,output_vol] = SEEG_to_mask(subject_name, channel_file, contac
         disp('BST> Volume atlas: Selecting closest voxel only.');
     end
     
-    massk = zeros(size(sMri.Cube));
+    mask = zeros(size(sMri.Cube));
 
-    for iChan = 1:size(contacts_loc_mri,1)
+    for iChan = 1:size(contact_name,1)
+
+        [iChannels, ~]  = channel_find(contacts, contact_name(iChan,:));
+        contacts_loc    = [contacts(iChannels).Loc]';
+
+        % If bipolar, then we take the midle between the two contacts
+        if size(contacts_loc,1) == 2
+            contacts_loc  = mean(contacts_loc,1);
+        end
+
+        % we convert the coordinate to voxel coordinates
+        contacts_loc_mri = cs_convert(sMri, 'scs', 'voxel', contacts_loc);
+    
         % Coordinates of the closest voxel
-        C = round(contacts_loc_mri(iChan,:));
+        C = round(contacts_loc_mri);
         % If there are multiple voxels
         if (size(sphXYZ, 1) > 1)
             % Exclude contacts too close to the border of the MRI
@@ -55,7 +68,7 @@ function [VOI_file,output_vol] = SEEG_to_mask(subject_name, channel_file, contac
             voxInd = sub2ind(size(sMri.Cube), C(1)+sphXYZ(:,1), C(2)+sphXYZ(:,2), C(3)+sphXYZ(:,3));
             
             % Update the mask with 1
-            massk(voxInd) = 1;
+            mask(voxInd) = 1;
 
         else
 
@@ -68,7 +81,7 @@ function [VOI_file,output_vol] = SEEG_to_mask(subject_name, channel_file, contac
             voxInd = [C(1), C(2), C(3)];
 
             % Update the mask with 1
-            massk(voxInd) = 1;
+            mask(voxInd) = 1;
 
         end
     end
@@ -76,7 +89,7 @@ function [VOI_file,output_vol] = SEEG_to_mask(subject_name, channel_file, contac
     disp('BST> Saving to Brainstorm database');
     
     output_vol = sMri;
-    output_vol.Cube = massk;
+    output_vol.Cube = mask;
     output_vol.Comment = output_name;
 
     output_vol.Histogram = [];
