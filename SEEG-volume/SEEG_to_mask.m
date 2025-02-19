@@ -7,18 +7,21 @@ function [VOI_file,output_vol] = SEEG_to_mask(subject_name, channel_file, contac
 
     sChannel = in_bst_channel(channel_file);
     
-    [iChannels, Comment]  = channel_find(sChannel.Channel, contact_name);
-    if length(iChannels) < length(contact_name)
-        warning('Some contacts were not find in the channels fille. \nContact found: %s', Comment)
+    % Load SEEG contacts
+    unique_contacts = unique({contact_name{:}});
+    [iChannels, ~]  = channel_find(sChannel.Channel, unique_contacts);
+    if length(iChannels) < length(unique_contacts)
+        not_found = setdiff(unique_contacts,{sChannel.Channel(iChannels).Name});
+        error('Some contacts were not find in the channels fille. \nContact not found: %s', strjoin(not_found,', '))
     end
-    
     contacts        = sChannel.Channel(iChannels);
-    contacts_loc    = [contacts.Loc]';
 
 
+    % Load subject MRI
     [sSubject, iSubject] = bst_get('Subject', subject_name);
     sMri = in_mri_bst(sSubject.Anatomy(sSubject.iAnatomy).FileName);
-    
+
+    contacts_loc    = [contacts.Loc]';
     contacts_loc_mri = cs_convert(sMri, 'scs', 'voxel', contacts_loc);
 
     % Compute sphere
