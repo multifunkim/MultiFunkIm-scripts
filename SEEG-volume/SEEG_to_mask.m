@@ -21,8 +21,6 @@ function [VOI_file,output_vol] = SEEG_to_mask(subject_name, channel_file, contac
     [sSubject, iSubject] = bst_get('Subject', subject_name);
     sMri = in_mri_bst(sSubject.Anatomy(sSubject.iAnatomy).FileName);
 
-    contacts_loc    = [contacts.Loc]';
-    contacts_loc_mri = cs_convert(sMri, 'scs', 'voxel', contacts_loc);
 
     % Compute sphere
     if all(radius > sMri.Voxsize)
@@ -42,9 +40,21 @@ function [VOI_file,output_vol] = SEEG_to_mask(subject_name, channel_file, contac
     
     massk = zeros(size(sMri.Cube));
 
-    for iChan = 1:size(contacts_loc_mri,1)
+    for iChan = 1:size(contact_name,1)
+
+        [iChannels, ~]  = channel_find(contacts, contact_name(iChan,:));
+        contacts_loc    = [contacts(iChannels).Loc]';
+
+        % If bipolar, then we take the midle between the two contacts
+        if size(contacts_loc,1) == 2
+            contacts_loc  = mean(contacts_loc,1);
+        end
+
+        % we convert the coordinate to voxel coordinates
+        contacts_loc_mri = cs_convert(sMri, 'scs', 'voxel', contacts_loc);
+    
         % Coordinates of the closest voxel
-        C = round(contacts_loc_mri(iChan,:));
+        C = round(contacts_loc_mri);
         % If there are multiple voxels
         if (size(sphXYZ, 1) > 1)
             % Exclude contacts too close to the border of the MRI
@@ -56,7 +66,6 @@ function [VOI_file,output_vol] = SEEG_to_mask(subject_name, channel_file, contac
             end
             % Indices of all the voxels within the sphere, around the contact
             voxInd = sub2ind(size(sMri.Cube), C(1)+sphXYZ(:,1), C(2)+sphXYZ(:,2), C(3)+sphXYZ(:,3));
-            
             % Update the mask with 1
             massk(voxInd) = 1;
 
