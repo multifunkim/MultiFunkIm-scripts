@@ -38,7 +38,7 @@ function [VOI_file,output_vol] = SEEG_to_mask(subject_name, channel_file, contac
         disp('BST> Volume atlas: Selecting closest voxel only.');
     end
     
-    massk = zeros(size(sMri.Cube));
+    mask = zeros(size(sMri.Cube));
 
     for iChan = 1:size(contact_name,1)
 
@@ -66,8 +66,9 @@ function [VOI_file,output_vol] = SEEG_to_mask(subject_name, channel_file, contac
             end
             % Indices of all the voxels within the sphere, around the contact
             voxInd = sub2ind(size(sMri.Cube), C(1)+sphXYZ(:,1), C(2)+sphXYZ(:,2), C(3)+sphXYZ(:,3));
+            
             % Update the mask with 1
-            massk(voxInd) = 1;
+            mask(voxInd) = 1;
 
         else
 
@@ -80,7 +81,7 @@ function [VOI_file,output_vol] = SEEG_to_mask(subject_name, channel_file, contac
             voxInd = [C(1), C(2), C(3)];
 
             % Update the mask with 1
-            massk(voxInd) = 1;
+            mask(voxInd) = 1;
 
         end
     end
@@ -88,7 +89,7 @@ function [VOI_file,output_vol] = SEEG_to_mask(subject_name, channel_file, contac
     disp('BST> Saving to Brainstorm database');
     
     output_vol = sMri;
-    output_vol.Cube = massk;
+    output_vol.Cube = mask;
     output_vol.Comment = output_name;
 
     output_vol.Histogram = [];
