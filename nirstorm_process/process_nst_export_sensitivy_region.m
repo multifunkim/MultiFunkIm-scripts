@@ -59,15 +59,39 @@ end
 function OutputFiles = Run(sProcess, sInputs) %#ok<DEFNU>
 
     OutputFiles = {};
+
+    sSubject = bst_get('Subject', sInputs.SubjectName);
+    sStudy   = bst_get('Study', sInputs.iStudy);
     
-    % Save the new head model
-    sStudy = bst_get('Study', sInputs.iStudy);
-    
-    sForward    = in_bst_headmodel(sStudy.HeadModel(sStudy.iHeadModel).FileName);
+    sForward      = in_bst_headmodel(sStudy.HeadModel(sStudy.iHeadModel).FileName, 1);
+    ChannelMat    = in_bst_channel(sInputs(1).ChannelFile);
+    if ndims(sForward.Gain) == 3
+        sForward = process_nst_import_head_model('convert_head_model', ChannelMat, sForward, 0);
+    end
+
+    if ~strcmp(sSubject.Surface(sSubject.iCortex).FileName, sForward.SurfaceFile)
+        bst_error('Headmodel and default cortical surface are not the same');
+        return
+    end
+
     sCortex     = in_tess_bst(sForward.SurfaceFile);
-    
-    nChannel    = size(sForward.Gain,1);
-    
+    iNIRS       = channel_find(ChannelMat.Channel, 'NIRS');
+    sChannel    = ChannelMat.Channel(iNIRS);
+    assert(length(sChannel) == size(sForward.Gain,1), 'Headmodel size dont match')
+
+    groups       = {sChannel.Group};
+    unique_group = unique(groups);
+    nChannel     = length(sChannel) / length(unique_group);
+
+    % average accross multiple wavelength
+    gain_matrix  = zeros(nChannel, size(sForward.Gain, 2));
+    for iGroup = 1:length(unique_group)
+        gain_matrix = gain_matrix + sForward.Gain(strcmp(groups, unique_group{iGroup}), :);
+    end
+    gain_matrix = gain_matrix ./ length(unique_group);
+    max_gain    = max(max(gain_matrix));
+
+
     % ROI selection
     ROI     = sProcess.options.scouts.Value;
     iAtlas  = find(strcmp( {sCortex.Atlas.Name},ROI{1}));
@@ -81,32 +105,29 @@ function OutputFiles = Run(sProcess, sInputs) %#ok<DEFNU>
     sz = [nChannel, length(varNames)];
     
     T = table('Size',sz,'VariableTypes',varTypes,'VariableNames',varNames);
+    
+    channels_names = {sChannel(strcmp(groups, unique_group{1})).Name};
+    channels_names = cellfun(@(x)strrep(x, unique_group{1}, ''), channels_names, 'UniformOutput', false);
 
-    % Average the gain of the two wavelength 
-    gain_matrix = squeeze(mean(sForward.Gain, 2));
-    max_gain    = max(max(gain_matrix));
-
-    iRow = 1;
     for iPair = 1:nChannel
 
         gain_channel = squeeze(gain_matrix(iPair,:)); 
         gain_channel(gain_channel <  10^(threshold_value)*max_gain) = 0;
-
+        
+        assert(all(gain_channel >= 0), 'Found channel with negative gain.')
 
         for iCluster = 1:length(iRois)
             sROI = sCortex.Atlas(iAtlas).Scouts(iRois(iCluster));
             vertex = sROI.Vertices;
 
-            T{iRow, sROI.Label} = sum(gain_channel(vertex));
+            T{iPair, sROI.Label} = sum(gain_channel(vertex));
         end
-
-        T{iRow,'Channel'} = sForward.pair_names(iPair);
-        iRow = iRow + 1;
+        
+        T{iPair,'Channel'} = channels_names(iPair);
     end
     
     
     fileName = sProcess.options.outputdir.Value{1};
     writetable(T,fileName, 'FileType','text');
-
 
 end
