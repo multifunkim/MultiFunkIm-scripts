@@ -1,7 +1,7 @@
 function varargout = process_mfip_consensusmaps_mojenastoprule_rasheda( varargin )
 %
 % _________________________________________________________________________
-% SUMMARY process_mfip_mfip_consensusmaps_mojenastoprule_rasheda
+% SUMMARY process_mfip_consensusmaps_mojenastoprule_rasheda
 %
 % Calculates consensus maps and average signals by clustering source-level 
 % brain activity using Ward's hierarchical clustering and 
